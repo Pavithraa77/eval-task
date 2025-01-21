@@ -1,0 +1,96 @@
+const html = `
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Task Management</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+      }
+      .task {
+        border: 1px solid #ccc;
+        padding: 10px;
+        margin-bottom: 10px;
+      }
+      .task button {
+        margin-left: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Task Management</h1>
+    <div id="tasks"></div>
+    <h2>Add New Task</h2>
+    <input type="text" id="title" placeholder="Title" />
+    <input type="text" id="description" placeholder="Description" />
+    <button onclick="addTask()">Add Task</button>
+
+    <script>
+      const apiUrl = "http://localhost:3000/tasks";
+
+      function fetchTasks() {
+        fetch(apiUrl)
+          .then((response) => response.json())
+          .then((data) => {
+            const tasksDiv = document.getElementById("tasks");
+            tasksDiv.innerHTML = "";
+            data.forEach((task) => {
+              const taskDiv = document.createElement("div");
+              taskDiv.className = "task";
+              taskDiv.innerHTML = `
+              <strong>${task.title}</strong>
+              <p>${task.description}</p>
+              <button onclick="deleteTask(${task.id})">Delete</button>
+              <button onclick="editTask(${task.id}, '${task.title}', '${task.description}')">Edit</button>
+            `;
+              tasksDiv.appendChild(taskDiv);
+            });
+          });
+      }
+
+      // Add a new task
+      function addTask() {
+        const title = document.getElementById("title").value;
+        const description = document.getElementById("description").value;
+
+        fetch(apiUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title, description }),
+        }).then(() => {
+          fetchTasks();
+          document.getElementById("title").value = "";
+          document.getElementById("description").value = "";
+        });
+      }
+
+      // Delete a task
+      function deleteTask(id) {
+        fetch(`${apiUrl}/${id}`, {
+          method: "DELETE",
+        }).then(() => fetchTasks());
+      }
+
+      // Edit a task
+      function editTask(id, title, description) {
+        const newTitle = prompt("Enter new title:", title);
+        const newDescription = prompt("Enter new description:", description);
+        if (newTitle && newDescription) {
+          fetch(`${apiUrl}/${id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              title: newTitle,
+              description: newDescription,
+            }),
+          }).then(() => fetchTasks());
+        }
+      }
+
+      fetchTasks();
+    </script>
+  </body>
+</html>
